@@ -1,6 +1,6 @@
 // Read the file and print its contents.
 const fs = require('fs');
-let input = "day2-input.txt"
+let input = "input/day2-input.txt"
 
 const data = fs.readFileSync(input, 'utf8').split("\n").map(e => e.split(" "));
 //this converts X,Y,Z to A,B,C
@@ -25,7 +25,7 @@ dataPart1 = dataPart1.map(e => [...e, outcomeForPlayer2(...e) + points(e[1])])
 console.log("Solution part 1" ,dataPart1.reduce((a,b)=> a + b[2],0))
 
 
-//part 2: the second column is the OUTCOME
+//part 2: the second column is the OUTCOME 11618
 const shapeForOutcome = (p1, outcome) => {
     if(outcome === "Y") return p1; //draw
     if(outcome === "Z" && p1 === "A") return "B"; //p2 needs to win:
@@ -42,6 +42,6 @@ const shapeForOutcome = (p1, outcome) => {
 let dataPart2 = data.map(e => [...e, shapeForOutcome(...e)])
 dataPart2 = dataPart2.map(e => [...e, outcomeForPlayer2(e[0],e[2]) + points(e[2])])
 
-//part 1 - Sum of points for player 2 (second column) (7657: too low)
+//part 1 - Sum of points for player 2 (second column)  11618
 console.log("Solution part 2" ,dataPart2.reduce((a,b)=> a + b[3],0))
 
