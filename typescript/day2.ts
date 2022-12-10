@@ -1,6 +1,4 @@
-// Read the file and print its contents.
 import * as fs from 'fs';
-import { type } from 'os';
 let input = "input/day2-input.txt"
 
 const data = fs.readFileSync(input, 'utf8').split("\n").map(e => e.split(" "));

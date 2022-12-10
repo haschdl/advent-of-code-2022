@@ -1,6 +1,4 @@
-// Read the file and print its contents.
 import * as fs from 'fs';
-import { type } from 'os';
 import { Stack } from './Stack';
 
 let input = "input/day5-input.txt"

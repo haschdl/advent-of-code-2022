@@ -1,4 +1,3 @@
-// Read the file and print its contents.
 import * as fs from 'fs';
 import Tree from 'ts-tree-structure';
 import { Node } from 'ts-tree-structure';

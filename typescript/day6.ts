@@ -1,4 +1,3 @@
-// Read the file and print its contents.
 import * as fs from 'fs';
 import { PerformanceObserver, performance } from 'node:perf_hooks';
 

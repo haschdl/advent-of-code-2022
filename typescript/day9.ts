@@ -1,4 +1,3 @@
-// Read the file and print its contents.
 import * as fs from 'fs';
 import { printGrid } from './utils';
 let input = "input/day9-input.txt"
@@ -103,6 +102,8 @@ console.log("Solution part 1", tailPositionsUnique.size) //6030
 
 // Part 2: rope has 10 knots...
 
+//positions of each of the 10 knot
+//the last position of each knot i is pos[i].slice(-1)[0]
 const positions: pos[][] = new Array(10).fill(0).map(_ => [{ x: 0, y: 0 }]);
 
 const advanceAtPosition = (i: number, positions: pos[][], move: move) => {
@@ -157,9 +158,7 @@ const drawGridGeneric = (positions: pos[][]) => {
     const [minY, maxY] = [Math.min(...positionsFlat.map(p => p.y)), Math.max(...positionsFlat.map(p => p.y))];
     const s = Math.max(Math.abs(maxX - minX), Math.abs(maxY - minY)) + 1;
 
-    //not going to work...
     let grid: string[][] = new Array(s).fill(0).map(_ => new Array(s).fill(" + "));
-    //headPositions.forEach(p => grid[p.x - minX][p.y - minY] = "H")
     positions.forEach((pos, ix) => pos.slice(-1).forEach(p => grid[s - 1 - p.y + minY][p.x - minX] = `[${ix == 0 ? "H" : ix}]`));
     printGrid(grid)
 }

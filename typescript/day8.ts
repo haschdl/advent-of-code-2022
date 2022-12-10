@@ -1,9 +1,5 @@
-// Read the file and print its contents.
+
 import * as fs from 'fs';
-import { listenerCount } from 'process';
-import Tree from 'ts-tree-structure';
-import { Node } from 'ts-tree-structure';
-const tree = new Tree();
 
 let input = "input/day8-input.txt"
 
