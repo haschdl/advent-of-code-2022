@@ -1,5 +1,10 @@
 {
   "devDependencies": {
-    "@types/node": "^18.11.10"
+    "@types/node": "^18.11.10",
+    "ts-node": "^10.9.1"
+  },
+  "dependencies": {
+    "dotenv": "^16.0.3",
+    "ts-tree-structure": "^1.0.2"
   }
 }
