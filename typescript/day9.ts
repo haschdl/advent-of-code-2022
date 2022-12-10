@@ -50,7 +50,6 @@ const applyMoves = (move: move) => {
 const moveOneStep = (pos: pos, direction: direction): pos => {
     let newPos = { x: pos.x, y: pos.y }
 
-
     switch (direction) {
         case "U":
             newPos.y += 1;
@@ -59,10 +58,10 @@ const moveOneStep = (pos: pos, direction: direction): pos => {
             newPos.x += 1;
             break;
         case "L":
-            newPos.x -= +1;
+            newPos.x -= 1;
             break;
         case "D":
-            newPos.y -= +1;
+            newPos.y -= 1;
             break;
     }
     return newPos;
@@ -76,10 +75,7 @@ const drawGrid = (headPositions: pos[], tailPositions: pos[]) => {
     const [minX, maxX] = [Math.min(...positions.map(p => p.x)), Math.max(...positions.map(p => p.x))];
     const [minY, maxY] = [Math.min(...positions.map(p => p.y)), Math.max(...positions.map(p => p.y))];
     const s = Math.max(Math.abs(maxX - minX), Math.abs(maxY - minY)) + 1;
-
-    //not going to work...
     let grid: cell[][] = new Array(s).fill(0).map(_ => new Array(s).fill("+"));
-    //headPositions.forEach(p => grid[p.x - minX][p.y - minY] = "H")
     headPositions.forEach(p => grid[s - 1 - p.y + minY][p.x - minX] = "H")
     tailPositions.forEach(p => grid[s - 1 - p.y + minY][p.x - minX] = "T")
     printGrid(grid)

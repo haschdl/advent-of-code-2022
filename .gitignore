@@ -1,4 +1,4 @@
 out
 node_modules
 .env
-input/*.txt
+input/day*-input.txt
