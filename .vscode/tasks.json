@@ -1,0 +1,21 @@
+{
+    // See https://go.microsoft.com/fwlink/?LinkId=733558
+    // for the documentation about the tasks.json format
+    "version": "2.0.0",
+    "tasks": [
+      {
+        "label": "Download puzzle input",
+        "type": "shell",
+        "command": "npx ts-node ./utils/downloader.ts ${input:day}",
+        "problemMatcher": []
+      }
+    ],
+    "inputs": [
+      {
+        "id": "day",
+        "type":"pickString",
+        "options": ["1","2","3","4","5","6","7","8","9","10","11","12","13"],
+        "description": "The day you would like to download the puzzle input"
+      }
+    ]
+}
