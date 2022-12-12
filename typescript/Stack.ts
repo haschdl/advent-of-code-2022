@@ -17,6 +17,14 @@ export class Stack<T> implements IStack<T> {
         this.storage.push(item);
     }
 
+    pushAll(items: T[]): void {
+        if (this.size() === this.capacity) {
+            throw Error("Stack has reached max capacity, you cannot add more items");
+        }
+        this.storage.push(...items);
+    }
+
+
     pop(): T | undefined {
         return this.storage.pop();
     }
