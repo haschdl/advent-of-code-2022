@@ -1,10 +1,6 @@
-"use strict"
-
-import { SlowBuffer } from 'buffer';
 import * as fs from 'fs';
-import { join } from 'path';
 import Graph from '../utils/graph';
-import { printGrid, splitChunks } from './utils';
+import { splitChunks } from './utils';
 let input = "input/day12-input.txt"
 
 type p = [number, number];//x,y
@@ -13,8 +9,6 @@ const ch = (c: string): number => c.charCodeAt(0);
 const rawData: string[][] = fs.readFileSync(input, 'utf8').split("\n").map(i => i.split(""));
 const ny = rawData.length, nx = rawData[0].length;
 const heights = rawData.map(r => r.map(o => ch(o)));
-
-const debug = false;
 
 const findChar = (char: string): p => {
     let x = 0;
@@ -32,10 +26,8 @@ const heightsArr = heights.flatMap(m => m);
 
 const h = (p: p): number => heights[p[1]][p[0]]
 
-const canMove = (from: p, to: p) => h(to) - h(from) <= 1;// && dist(to,end) <= dist0;
-
 const moves = (p: p): p[] => {
-    const dirs = ["<", ">", "^", "v"]
+    const canMove = (from: p, to: p) => h(to) - h(from) <= 1;
     const neigh: p[] = splitChunks([-1, 0, 1, 0, 0, 1, 0, -1], 2); //no diag.
     let r: p[] = [];
     neigh.forEach((v) => r.push([p[0] + v[0], p[1] + v[1]]));
