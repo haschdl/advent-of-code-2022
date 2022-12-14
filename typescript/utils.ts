@@ -1,4 +1,4 @@
-const printGrid = (arr: any, separator?: string, wrapper?:string) => {
+const printGrid = (arr: any, separator?: string, wrapper?: string) => {
 
     let res = ""
     let sep = "\t";
@@ -21,6 +21,28 @@ const printGrid = (arr: any, separator?: string, wrapper?:string) => {
     console.log(res)
 }
 
+/**
+ * A Point, representing x and y coordinates.
+ */
+class Point {
+    x: number;
+    y: number;
+}
+
+/**
+ * 
+ * Draw a grid of Points shifting the origin to the min/max of the points.
+ */
+const drawGridOffSet = (points: Point[][]) => {
+    type cell = string;
+    const [minX, maxX] = [Math.min(...points.map(p => p.x)), Math.max(...points.map(p => p.x))];
+    const [minY, maxY] = [Math.min(...points.map(p => p.y)), Math.max(...points.map(p => p.y))];
+    const s = Math.max(Math.abs(maxX - minX), Math.abs(maxY - minY)) + 1;
+    let grid: cell[][] = new Array(s).fill(0).map(_ => new Array(s).fill("+"));
+    points.forEach(p => grid[s - 1 - p.y + minY][p.x - minX] = "#")
+    printGrid(grid)
+}
+
 const splitChunks = (arr: any[], chunkSize: number) => {
     return arr.reduce((resultArray, item, index) => {
         const chunkIndex = Math.floor(index / chunkSize);
@@ -34,4 +56,4 @@ const splitChunks = (arr: any[], chunkSize: number) => {
         return resultArray
     }, [])
 }
-export { printGrid, splitChunks }
+export { Point, drawGridOffSet, printGrid, splitChunks }
