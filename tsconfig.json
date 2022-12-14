@@ -4,6 +4,7 @@
         "moduleResolution": "Node",
         "target": "ESNext",
         "jsx": "react",
+        "compileOnSave" : true,
         "esModuleInterop": true,
         "strictNullChecks": true,
         "strictFunctionTypes": true,
