@@ -1,6 +1,6 @@
 import { fstat } from "node:fs";
 
-const printGrid = (arr: any, separator?: string, wrapper?: string):string => {
+const printGrid = (arr: any, separator?: string, wrapper?: string): string => {
 
     let res: string[] = []
     let sep = "\t";
@@ -18,10 +18,10 @@ const printGrid = (arr: any, separator?: string, wrapper?: string):string => {
 
     //naive check for array of arrays
     if (Array.isArray(arr[0]))
-        b = arr.reduce((a,b) => a = `${a}${reduceItem(b)}\n`,"");
+        b = arr.reduce((a, b) => a = `${a}${reduceItem(b)}\n`, "");
     else
         b = arr.reduce((a: string, b: string) => a = `${a}${b}${sep}`, "");
-    
+
     return b;
 }
 
@@ -29,21 +29,51 @@ const printGrid = (arr: any, separator?: string, wrapper?: string):string => {
  * A Point, representing x and y coordinates.
  */
 class Point {
+    /**
+     * Manhattan distance to point p.
+     * @param p 
+     */
+    distM(p: Point) {
+        return Math.abs(this.x - p.x) + Math.abs(this.y - p.y);
+    }
     x: number;
     y: number;
     c: string; //for rendering;
 
-    constructor(x = 0, y = 0) {
+    constructor(x = 0, y = 0, c?: string) {
         this.x = x;
         this.y = y;
+        if (c) this.c = c;
     }
     equals = (p2: Point) => p2.x === this.x && p2.y === this.y;
-    equalsInt = (p2: Point, i:number) => this.equals(p2) ? i: 1;
+    equalsInt = (p2: Point, i: number) => this.equals(p2) ? i : 1;
     addX = (x1: number) => new Point(this.x + x1, this.y);
     addY = (y1: number) => new Point(this.x, this.y + y1);
     add = (x1: number, y1: number) => new Point(this.x + x1, this.y + y1);
     setC = (c: string) => { this.c = c; return this; }
     clone = () => new Point(this.x, this.y);
+    rect = (radius: number): Point[] => {
+        let rect: Point[] = [];
+        for (let x = -radius; x < radius; x++) {
+            let y = radius - Math.abs(x);
+            rect.push(this.clone().add(x, y));
+            rect.push(this.clone().add(x, -y));
+        }
+        return rect;
+    };
+    rectFull = (radius: number): Point[] => {
+        let rect: Point[] = [];
+        while (radius > 0) {
+            for (let x = -radius; x <= radius; x++) {
+                let y = radius - Math.abs(x);
+                rect.push(this.clone().add(x, y));
+                rect.push(this.clone().add(x, -y));
+            }
+            radius--;
+        }
+        return rect;
+    };
+    toString = () => `[${this.x},${this.y}]`
 }
 
 /**
@@ -73,7 +103,7 @@ const drawArrayOffSet = (source: Point[], highligh?: Point): string => {
         grid.push(highligh)
     const [minX, maxX] = [Math.min(...grid.map(p => p.x)), Math.max(...grid.map(p => p.x))];
     const [minY, maxY] = [Math.min(...grid.map(p => p.y)), Math.max(...grid.map(p => p.y))];
-    const sx = Math.abs(maxX - minX)+1,sy= Math.abs(maxY - minY)+ 1;
+    const sx = Math.abs(maxX - minX) + 1, sy = Math.abs(maxY - minY) + 1;
     let gridPrint: cell[][] = new Array(sy).fill(0).map(_ => new Array(sx).fill("."));
     grid.forEach((v, x) => gridPrint[v.y - minY][v.x - minX] = v.c);
     if (highligh)

@@ -46,6 +46,7 @@ const isOrdered = (left: number | number[], right: number | number[], dep: numbe
         }
         return 0;
     }
+    return -1;
 }
 
 let sum = 0;

@@ -1,5 +1,5 @@
 import * as fs from 'fs';
-import Graph from '../utils/graph';
+import Graph from '../lib/Graph';
 import { splitChunks } from './utils';
 let input = "input/day12-input.txt"
 
