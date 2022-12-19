@@ -2,3 +2,7 @@ out
 node_modules
 .env
 input/day*-input.txt
+
+*.cpuprofile
+*.heapprofile
+*.heapsnapshot

@@ -1,7 +1,7 @@
 // Read the file and print its contents.
 import * as fs from 'fs';
 import path from 'node:path';
-import fetch from "node-fetch";//node<18
+
 require('dotenv').config()
 
 main(process.argv);
