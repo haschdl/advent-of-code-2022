@@ -84,7 +84,7 @@ function goDown(pc: Piece, grid: number[]): boolean {
     if (pc.bottom == 0) {
         return false;
     }
-    const ix = pc.bottom-1;
+    const ix = pc.bottom - 1;
     // below is equivalent to  gridSlice.some((v, ix) => (vv[ix] & v) != 0);
     const clashWithGrid = (
         ((grid[ix] & pc.v[0]) != 0) ||
@@ -110,9 +110,7 @@ function goDown(pc: Piece, grid: number[]): boolean {
 function simulate(rockCountMax: number): number {
 
     let rockCount: number = 0;
-    let grid: number[] = [];
 
-    let cumulativeHeight = 0;
     let currentGridHeight = 0;
 
     let jetsGen = jetMachine();
@@ -120,8 +118,6 @@ function simulate(rockCountMax: number): number {
 
 
     for (rockCount = 0; rockCount < rockCountMax; rockCount++) {
-        if (rockCount % 1000000 == 0)
-            console.debug(`Rocks fallen ${(rockCount).toExponential(1)} Grid size: ${grid.length}`)
 
         let currentRock = pieces[rockCount % pieces.length];
         currentRock.init();
@@ -148,16 +144,7 @@ function simulate(rockCountMax: number): number {
         //it has rested=> add to grid (bottom first)
         currentRock.v.forEach((v, i) => { if (v == 0) return; let ix = currentRock.bottom + i; ix > grid.length - 1 ? grid.push(v) : grid[ix] |= v });
 
-        //reset grid "once in while", just like tetris
-        if (rockCount % 500== 0) {
-            //check for line
-            let cutAt = grid.findLastIndex((v,ix,arr) => (v|arr[ix+1]) == 127);
-            if (cutAt > 0) {
-                grid = grid.slice(cutAt);
-                cumulativeHeight += cutAt;
-                currentGridHeight = 0;
-            }
-        }
+
 
         currentGridHeight = grid.length;
 
@@ -167,17 +154,37 @@ function simulate(rockCountMax: number): number {
         }
 
     }
-    return cumulativeHeight + currentGridHeight;
+    return currentGridHeight;
 }
 
 //Part 1: simulate after 2022 rocks
+
 debug = false;
 let rockCount = 2022;
+let grid: number[] = [];
 let solutionPart1 = simulate(rockCount);
 console.log(`Grid (after ${rockCount} rocks) has height ${solutionPart1}`);
 assert(solutionPart1 == 3068);
 
+
 //Part 2: run simulation after 1 000 000 000 000 rocks (1e12)
-rockCount = 1e12;
-let solutionPart2 = simulate(rockCount);
-console.log(`Grid (after ${rockCount} rocks) has height ${solutionPart2}`);
+//here the solution is to find the cycle, after how many loops it repeats?
+
+const sliceSize = 10;
+let start = -1;
+let attemps = 100;
+let i = -1;
+while (attemps > 0 && i == -1) {
+    start++;
+    let firstRows = grid.slice(start,start+ sliceSize);
+    //find next slice that equals the firstRows
+    i = grid.findIndex((_, xx) => xx > start+sliceSize && firstRows.every((v, yy) => v == grid[start+xx + yy]));
+    attemps--;
+    
+}
+
+console.log(`Pattern starts repeating at ${start} for duration of ${i}`); //starts repeating at 25, with length 53 length ([25-78[)
+
+
+
+//console.log(`Grid (after ${rockCount} rocks) has height ${solutionPart2}`);
