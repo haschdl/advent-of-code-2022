@@ -136,7 +136,6 @@ class Map {
                 }
                 break;
             case 2: //LEFT <
-                //TODO BUG HERE THAT MAKE THE RESULT CORRECT...
                 if (this.rowEnd() === OPEN) // facing: [<]
                     this._pos.x = this.rowEndIx(); //loop to end
                 break;

@@ -1,8 +1,8 @@
-import { fstat } from "node:fs";
+
 
 const printGrid = (arr: any, separator?: string, wrapper?: string): string => {
 
-    let res: string[] = []
+    const res: string[] = []
     let sep = "\t";
     let b = "";
 
@@ -29,6 +29,8 @@ const printGrid = (arr: any, separator?: string, wrapper?: string): string => {
  * A Point, representing x and y coordinates.
  */
 class Point {
+
+
     /**
      * Manhattan distance to point p.
      * @param p 
@@ -49,23 +51,29 @@ class Point {
     equalsInt = (p2: Point, i: number) => this.equals(p2) ? i : 1;
     addX = (x1: number) => new Point(this.x + x1, this.y);
     addY = (y1: number) => new Point(this.x, this.y + y1);
-    add = (x1: number, y1: number) => new Point(this.x + x1, this.y + y1);
+    /**
+     * Returns a new instace of Point translated x1 and y1.
+     * @param x1 
+     * @param y1 
+     * @returns 
+     */
+    add = (x1: number, y1: number) => new Point(this.x + x1, this.y + y1, this.c);
     setC = (c: string) => { this.c = c; return this; }
-    clone = () => new Point(this.x, this.y);
+    clone = () => new Point(this.x, this.y, this.c);
     rect = (radius: number): Point[] => {
-        let rect: Point[] = [];
+        const rect: Point[] = [];
         for (let x = -radius; x < radius; x++) {
-            let y = radius - Math.abs(x);
+            const y = radius - Math.abs(x);
             rect.push(this.clone().add(x, y));
             rect.push(this.clone().add(x, -y));
         }
         return rect;
     };
     rectFull = (radius: number): Point[] => {
-        let rect: Point[] = [];
+        const rect: Point[] = [];
         while (radius > 0) {
             for (let x = -radius; x <= radius; x++) {
-                let y = radius - Math.abs(x);
+                const y = radius - Math.abs(x);
                 rect.push(this.clone().add(x, y));
                 rect.push(this.clone().add(x, -y));
             }
@@ -73,7 +81,17 @@ class Point {
         }
         return rect;
     };
-    toString = () => `[${this.x},${this.y}]`
+
+    /**
+     * Updates coordinates to x and y of the `to` argument.
+     * @param to 
+     */
+    moveTo(to: Point) {
+        this.x = to.x;
+        this.y = to.y;
+    }
+    toString = () => `${this.x},${this.y}`
+    static parseString = (str: string) => new Point(Number(str.split(",")[0]), Number(str.split(",")[1]));
 }
 
 /**
@@ -85,8 +103,8 @@ const drawGridOffSet = (grid: Point[][]) => {
     const [minX, maxX] = [Math.min(...grid.flatMap(ps => ps.map(p => p.x))), Math.max(...grid.flatMap(ps => ps.map(p => p.x)))];
     const [minY, maxY] = [Math.min(...grid.flatMap(ps => ps.map(p => p.y))), Math.max(...grid.flatMap(ps => ps.map(p => p.y)))];
     const s = Math.max(Math.abs(maxX - minX), Math.abs(maxY - minY)) + 1;
-    let gridPrint: cell[][] = new Array(s).fill(0).map(_ => new Array(s).fill("+"));
-    grid.forEach((line, y) => line.forEach((v, x) => gridPrint[s - 1 - v.y + minY][v.x - minX] = "#"));
+    const gridPrint: cell[][] = new Array(s).fill(0).map(() => new Array(s).fill("+"));
+    grid.forEach((line) => line.forEach((v) => gridPrint[s - 1 - v.y + minY][v.x - minX] = "#"));
     return printGrid(gridPrint, "")
 }
 
@@ -98,14 +116,14 @@ const drawGridOffSet = (grid: Point[][]) => {
 const drawArrayOffSet = (source: Point[], highligh?: Point): string => {
 
     type cell = string;
-    let grid = source.slice(0);
+    const grid = source.slice(0);
     if (highligh)
         grid.push(highligh)
     const [minX, maxX] = [Math.min(...grid.map(p => p.x)), Math.max(...grid.map(p => p.x))];
     const [minY, maxY] = [Math.min(...grid.map(p => p.y)), Math.max(...grid.map(p => p.y))];
     const sx = Math.abs(maxX - minX) + 1, sy = Math.abs(maxY - minY) + 1;
-    let gridPrint: cell[][] = new Array(sy).fill(0).map(_ => new Array(sx).fill("."));
-    grid.forEach((v, x) => gridPrint[v.y - minY][v.x - minX] = v.c);
+    const gridPrint: cell[][] = new Array(sy).fill(0).map(()=> new Array(sx).fill("."));
+    grid.forEach((v) => gridPrint[v.y - minY][v.x - minX] = v.c);
     if (highligh)
         gridPrint[highligh.y - minY][highligh.x - minX] = "+";
 
@@ -127,4 +145,4 @@ const splitChunks = (arr: any[], chunkSize: number) => {
         return resultArray
     }, [])
 }
-export { Point, drawArrayOffSet, printGrid, splitChunks }
+export { Point, drawArrayOffSet,drawGridOffSet, printGrid, splitChunks }
