@@ -107,14 +107,14 @@ function goDown(pc: Piece, grid: number[]): boolean {
     return false;
 }
 
-function simulate(rockCountMax: number): number {
+function simulate(rockCountMax: number) {
 
     let rockCount: number = 0;
 
     let currentGridHeight = 0;
 
     let jetsGen = jetMachine();
-
+    let intermediate_heights:number[]=[];
 
 
     for (rockCount = 0; rockCount < rockCountMax; rockCount++) {
@@ -141,9 +141,10 @@ function simulate(rockCountMax: number): number {
                 printState(intermediate);
             }
         }
+
         //it has rested=> add to grid (bottom first)
         currentRock.v.forEach((v, i) => { if (v == 0) return; let ix = currentRock.bottom + i; ix > grid.length - 1 ? grid.push(v) : grid[ix] |= v });
-
+        intermediate_heights.push(grid.length);
 
 
         currentGridHeight = grid.length;
@@ -154,7 +155,7 @@ function simulate(rockCountMax: number): number {
         }
 
     }
-    return currentGridHeight;
+    return intermediate_heights;
 }
 
 //Part 1: simulate after 2022 rocks
@@ -163,14 +164,14 @@ debug = false;
 let rockCount = 2022;
 let grid: number[] = [];
 let solutionPart1 = simulate(rockCount);
-console.log(`Grid (after ${rockCount} rocks) has height ${solutionPart1}`);
-assert(solutionPart1 == 3068);
+console.log(`Grid (after ${rockCount} rocks) has height ${solutionPart1.slice(-1)[0]}`);
+assert(solutionPart1.slice(-1)[0] == 3068);
 
 
 //Part 2: run simulation after 1 000 000 000 000 rocks (1e12)
 //here the solution is to find the cycle, after how many loops it repeats?
 
-const sliceSize = 10;
+const sliceSize = 19;
 let start = -1;
 let attemps = 100;
 let i = -1;
@@ -178,13 +179,20 @@ while (attemps > 0 && i == -1) {
     start++;
     let firstRows = grid.slice(start,start+ sliceSize);
     //find next slice that equals the firstRows
-    i = grid.findIndex((_, xx) => xx > start+sliceSize && firstRows.every((v, yy) => v == grid[start+xx + yy]));
+    i = grid.findIndex((_, xx) => xx > start+sliceSize && firstRows.every((v, yy) => v == grid[xx + yy]));
     attemps--;
     
 }
 
-console.log(`Pattern starts repeating at ${start} for duration of ${i}`); //starts repeating at 25, with length 53 length ([25-78[)
+console.log(`Pattern repeats at ${start} and ${i} (length = ${i-start+1})`); //starts repeating at 25, with length 53 length ([25-78[)
+console.log(`Heights`)
+Range.from(0,20).forEach(i => {
+    let ix0 = 25+(i-1)*53;
+    let ix = 25+i*53;
+    console.log(`${ix}=${solutionPart1[ix]} delt=${solutionPart1[ix]-solutionPart1[ix0]}`); //starts repeating at 25, with length 53 length ([25-78[)
+});
+/*
+25 rocks => 
 
-
-
-//console.log(`Grid (after ${rockCount} rocks) has height ${solutionPart2}`);
+*/
+console.log(``);
