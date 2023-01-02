@@ -8,7 +8,9 @@
   },
   "dependencies": {
     "dotenv": "^16.0.3",
+    "floyd-warshall-shortest": "^1.0.2",
     "node-fetch": "^3.3.0",
+    "ts-linked-list": "^1.0.6",
     "ts-tree-structure": "^1.0.2"
   }
 }
