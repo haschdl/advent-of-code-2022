@@ -1,10 +1,7 @@
-import { assert, debug } from 'console';
 import * as fs from 'fs'
-import { Point as p, Point, splitChunks, drawArrayOffSet, printGrid } from './utils'
-import { Range } from '../lib/Range'
-import Graph from '../lib/Graph';
-import { WeightedGraph } from '../lib/WeightedGraph';
-let input = "input/day16-input-samp.txt"; let y = 2000000;
+import { FloydWarshall, Edge } from 'floyd-warshall-shortest';
+import { assert } from 'console';
+const input = "input/day16-input.txt";
 //let input = "input/day15-input-samp.txt" ;let y = 10;
 
 const rawData: string[] = fs.readFileSync(input, 'utf8').split("\n");
@@ -13,126 +10,264 @@ const nValves = rawData.length;
 
 const flowRates: number[] = new Array(nValves);
 const edgesString: string[][] = new Array(nValves);
-const edgesNames: string[] = new Array(nValves);
-let edges: number[][] = new Array(nValves);
+const nodeNames: string[] = new Array(nValves);
+const edges: number[][] = new Array(nValves);
 
 const regexpSize = /Valve ([A-Z]{2}) has flow rate=(-?[0-9]+); tunnel(?:s)? lead(?:s)? to valve(?:s)? (.*)/gm;
-const stuff = rawData.forEach((l, i) => {
-    let ms = [...l.matchAll(regexpSize)];
-    edgesNames[i] = ms[0][1];
+rawData.forEach((l, i) => {
+    const ms = [...l.matchAll(regexpSize)];
+    nodeNames[i] = ms[0][1];
     flowRates[i] = Number(ms[0][2]);
     edgesString[i] = ms[0][3].split(", ");
 });
 
-edgesString.forEach((ls, i) => edges[i] = ls.map(s => edgesNames.indexOf(s)));
-
-//console.log("Flow rates", flowRates); console.log("Edges", edges);
-
-//heuristics: visit top releasing valves as soon as possible!
-const topByIndex = flowRates.map((r, i) => ({ i: i, r: r })).sort((a, b) => b.r - a.r).map(c => c.i);
-console.log("Top valves by flow rate", topByIndex);
+edgesString.forEach((ls, i) => edges[i] = ls.map(s => nodeNames.indexOf(s)));
 
 
-const partialRelease = (path: number[]): number[] => {
-    let sum = 0;
-    type p={t:number,v:number}
-    let partials: p[] = [];
-    let pathC = path.slice(0);
-    let open = new Set<number>();
-    for (let t = 0; t <= 30; t += 1) {
-        if (t == 0) {
-            partials.push({t:t,v:0});
-            open.add(0);
+
+type p = { time: number, v: number }
+const partialRelease = (steps: step[]) => {
+
+    const partials: p[] = [];
+
+    const openValves = new Set<number>();
+    partials.push({ time: 0, v: 0 });
+    openValves.add(0);
+    for (let t = 1; t <= 30; t += 1) {
+
+        const nextStep = steps.find(step => step.atTime == t);
+        if (nextStep == undefined || openValves.has(nextStep.valveOpen)) {
+            partials.push({ time: t, v: partials.slice(-1)[0].v });//continues with the same rate as previous minute
             continue;
         }
-        let node = pathC.shift();
-        if (node == undefined || open.has(node)) {
-            partials.push({t:t, v:partials.slice(-1)[0].v});//continues;
-            continue;
-        }
-        if (node && !open.has(node)) {
-            open.add(node);
-            const part = Array.from(open);
-            partials.push({t:t, v:partials.slice(-1)[0].v});//continues;
-            partials.push({t:t+1, v:part.reduce((a, b) => a + flowRates[b], 0)});
-            t += 1;
-            continue;
-        }
+        if (nextStep && !openValves.has(nextStep.valveOpen)) {
 
+            // this is a new valve to be opened
+            openValves.add(nextStep.valveOpen);
+            const part = Array.from(openValves);
+            partials.push({ time: t, v: partials.slice(-1)[0].v });//continues;
+            if (flowRates[nextStep.valveOpen] > 0) {
+                partials.push({ time: t + 1, v: part.reduce((a, b) => a + flowRates[b], 0) });
+                t += 1;
+            }
+            continue;
+        }
     }
-
     return partials;
 }
 
+const totalRelease = (steps: step[], totalTime: number) => {
+    return steps.reduce((t, s) => t += Math.max(totalTime - s.atTime, 0) * flowRates[s.valveOpen], 0);
+}
 
-//wrong for [0,3,0,1,0,0,9,0,0,0,0,0,0,7,0,0,4,0,2] it should be 1651
-const totalRelease = (path: number[]): number => {
-    let sum = 0;
-    let open = new Set<number>();
-    let t = 30;
-    for (let i = 0; i < path.length; i++) {
-        const node = path[i];
-        if (!open.has(node)) {
-            t -=1;
-            sum += t * flowRates[node];
+type step = { valveOpen: number, atTime: number }
+
+
+function* getPathsFloydMarshall(steps: step[], lastValveOpen: number, nodesToVisit: number[], time: number) {
+    if (nodesToVisit.length === 0 || time >= 30) {
+        yield steps;
+        return;
+    }
+
+    for (const node of nodesToVisit) {
+        //getShortestDistanceCached(lastValveOpen, node)
+        const cost = shortestDistances[lastValveOpen * N + node] + 1;// graph.getShortestDistance(lastValveOpen, node) + 1;
+        if (time + cost >= 30)
+            yield steps;
+
+        const step = { valveOpen: node, atTime: time + cost };
+
+        const nextPaths = getPathsFloydMarshall([...steps, step], step.valveOpen, nodesToVisit.filter(n => n !== node), time + cost);
+        for (const pathTime of nextPaths)
+            yield pathTime;
+    }
+}
+
+
+function* getPathsFloydMarshallTwo(steps: step[], lastValveOpen1: number, lastValveOpen2: number, nodesToVisit: number[], time1: number, time2: number) {
+    if (nodesToVisit.length > 0 && time1 >= 30 && time2 >= 30) {
+        yield steps;
+        return;
+    }
+
+    if (nodesToVisit.length === 0 || (lastValveOpen1 == -1 && lastValveOpen2 == -1)) {
+        yield steps;
+        return;
+    }
+
+    //let nextPaths;
+
+    for (let i = 0; i < nodesToVisit.length; i += 1) {
+
+
+
+        if (lastValveOpen1 >= 0) {
+            const node1 = nodesToVisit[i];
+            const cost1 = shortestDistances[lastValveOpen1 * N + node1] + 1;
+            const step1 = { valveOpen: node1, atTime: time1 + cost1 };
+
+            if (lastValveOpen2 >= 0) {
+                const otherNodes = nodesToVisit.filter(n => n != node1);
+                for (let j = 0; j < otherNodes.length; j += 1) {
+                    const node2 = otherNodes[j];
+                    const cost2 = shortestDistances[lastValveOpen2 * N + node2] + 1;// graph.getShortestDistance(lastValveOpen, node) + 1;  
+                    const step2 = { valveOpen: node2, atTime: time2 + cost2 };
+
+                    /*
+                    if ((time1 + cost1) >= 30 && (time2 + cost2) >= 30) {
+                        yield steps;
+                        continue;
+                    }*/
+
+                    if ((time1 + cost1) <= 30 && (time2 + cost2) <= 30) //both continue
+                        yield* getPathsFloydMarshallTwo([...steps, step1, step2], step1.valveOpen, step2.valveOpen, nodesToVisit.filter(n => n !== node1 && n != node2), time1 + cost1, time2 + cost2);
+                    else if (time2 + cost2 <= 30)  //only 2 continues, 1 discarded
+                        yield* getPathsFloydMarshallTwo([...steps, step2], -1, step2.valveOpen, nodesToVisit.filter(n => n != node2), time1, time2 + cost2);
+                    /*
+                    if (nextPaths)
+                        for (const pathTime of nextPaths)
+                            yield pathTime;
+                            */
+                }
+            }
+            else {//it is only node1/cost2
+                yield* getPathsFloydMarshallTwo([...steps, step1], step1.valveOpen, -1, nodesToVisit.filter(n => n !== node1), time1 + cost1, time2);
+                /* for (const pathTime of nextPaths)
+                     yield pathTime;
+                     */
+            }
         }
-        
-            t -= 1;
-            open.add(node);
-        
-    }
-    return sum;
-}
+        else if (lastValveOpen2 >= 0) { //lastValveOpen1 is -1
+            const node2 = nodesToVisit[i];
+            const cost2 = shortestDistances[lastValveOpen2 * N + node2] + 1;
 
-function* getPaths(currPath: number[], edges: number[][], depth: number) {
-    if (depth === 15) {
-        yield currPath;
-        return;
-    }
+            if (time2 + cost2 >= 30) {
+                yield steps;
+                continue;
+            }
+            const step2 = { valveOpen: node2, atTime: time2 + cost2 };
+            yield* getPathsFloydMarshallTwo([...steps, step2], -1, step2.valveOpen, nodesToVisit.filter(n => n != node2), time1, time2 + cost2);
 
-    const last = currPath.slice(-1)[0];
+            /*for (const pathTime of nextPaths)
+                yield pathTime;*/
 
-    if (edges[last] === undefined || edges[last].length === 0) {
-        yield currPath;
-        return;
-    }
-
-    for (const edge of edges[last]) {
-        let nextPaths = getPaths([...currPath, edge], edges, depth + 1);
-        for (const path of nextPaths)
-            yield path;
-
+        }
+        else return; //both -1
     }
 }
 
-//let paths = getPaths([0], edges, 0);
-let graph = new WeightedGraph();
-Range.from(0, nValves).forEach(i => graph.addVertex(i))
 
-edges.forEach((vEdges, from) => vEdges.forEach(to => graph.addEdge(from, to, 1 / (flowRates[to]))));
 
-const goalPredicate = (depth, _v) => depth == 6;
+//edges should not repeat
+const edgesUnique: number[][] = new Array(nodeNames.length).fill(0).map(() => []);
+edges.map((vEdges, from) => vEdges.forEach(to => {
+    if (edgesUnique[to].includes(from))
+        return;
+    edgesUnique[from].push(to);
+}));
 
-let sols = getPaths([0], edges, 0);
+//Range.from(0, edgesUnique.length).forEach(i => graph.addVertex(i))
 
-let sol = sols.next();
-let maxRelease = -Infinity;
-let it = 0;
-while (!sol.done) {
 
-    //perm = permutations of each valve: open or close
-    //this would not work! 
-    //best strategy is to seek first the high prio 
-    //valves then continue to smaller ones!
+//graph approach 2: from node A to B, there are 2 possibilities: 
+// go to B and open B (cost = 1 + 1 / (1 + flowRateB))
+// go to B and not open B (cost = 1)
+const edgesFloydWarshall: Edge<number>[] = []
+edgesUnique.forEach((vEdges, from) =>
+    vEdges.forEach(to => {
+        edgesFloydWarshall.push({ from: from, to: to, weight: 1 }); //cost of going to "to" and *opening* valve
+    })
+);
+
+const graph = new FloydWarshall(edgesFloydWarshall, false); // undirected edges!!!
+
+const N = flowRates.length;
+const shortestDistances: Uint16Array = new Uint16Array(N * N);
+
+//const shortestDistances: number[][] = new Array(flowRates.length).fill(0).map(e => new Array(flowRates.length));
+for (let from = 0; from < N; from++) {
+    for (let to = 0; to < N; to++) {
+        const ix = from * N + to;
+        shortestDistances[ix] = graph.getShortestDistance(from, to);
+    }
+}
+
+const valve0 = nodeNames.findIndex(n => n == "AA");
+
+
+// Part 1: one person visiting nodes
+function part1() {
+    const nodesToVisit0: number[] = flowRates.reduce((m, v, i) => (v > 0 && m.push(i), m), [] as number[]);
+    nodesToVisit0.sort((a, b) => flowRates[b] - flowRates[a]);
+
+
+    const sols = getPathsFloydMarshall([{ valveOpen: valve0, atTime: 0 }], valve0, nodesToVisit0, 0);
+    let sol = sols.next();
     let perm = sol.value;
-    const release = partialRelease(perm).reduce((a,b)=>a+b.v,0);
-    it++;
-    if (release > maxRelease) {
-        maxRelease = release;
-        const p = perm.map(i => edgesNames[i]);
-        console.log(`${it}\tPath: ${p.join(", ")} Total release: ${release}`);
-        //console.log(`Partial releases: ${partialRelease(sol.value)} Sum of partial: ${partialRelease(sol.value).reduce((a, b) => a + b, 0)}`);
+    let finalSol = sol.value;
+    let maxRelease = -Infinity;
+    let it = 0;
+    while (!sol.done) {
 
+        //const release = partialRelease(sol.value).reduce((a, b) => a + b.v, 0);
+        const release = totalRelease(sol.value, 30);
+        it++;
+        if (it % 1000000 == 0)
+            console.log("Iterations", it)
+        if (release > maxRelease) {
+            perm = sol.value;
+            maxRelease = release;
+            finalSol = sol.value;
+            const p = perm.map(i => nodeNames[i.valveOpen]);
+
+            console.log(`${it}\tValves open: ${p.join(",")} Total release: ${maxRelease}`);
+            // const partialReleases = partialRelease(sol.value);console.log(`Partial releases: ${partialReleases} Sum of partial: ${partialReleases.reduce((a, b) => a + b.v, 0)}`);
+        }
+        sol = sols.next();
     }
-    sol = sols.next();
+
+    //2471 too high
+    console.log("Number of iterations until max", it)
+    console.log("Part 1 - Max release at t=30", maxRelease)
+    //assert()
 }
+part1();
+
+// Part 2: you and the elephant
+const part2 = () => {
+
+    const nodesToVisit0: number[] = flowRates.reduce((m, v, i) => (v > 0 && m.push(i), m), [] as number[]);
+    nodesToVisit0.sort((a, b) => flowRates[b] - flowRates[a]);
+
+    const sols = getPathsFloydMarshallTwo([{ valveOpen: valve0, atTime: 4 }], valve0, valve0, nodesToVisit0, 4, 4);
+    let sol = sols.next();
+    let perm = sol.value;
+    let finalSol = sol.value;
+    let maxRelease = -Infinity;
+    let it = 0;
+    while (!sol.done) {
+
+        //const release = partialRelease(sol.value).reduce((a, b) => a + b.v, 0);
+        const release = totalRelease(sol.value, 30);
+        it++;
+        if (it % 5000000 == 0) {
+            console.log(`It ${it.toLocaleString()} Total release: ${totalRelease(sol.value, 30)}`);
+        }
+        if (release > maxRelease) {
+            perm = sol.value;
+            maxRelease = release;
+            finalSol = sol.value;
+            const p = perm.map(i => nodeNames[i.valveOpen]);
+
+            console.log(`${it}\tValves open: ${p.join(",")} Total release: ${maxRelease}`);
+            // const partialReleases = partialRelease(sol.value);console.log(`Partial releases: ${partialReleases} Sum of partial: ${partialReleases.reduce((a, b) => a + b.v, 0)}`);
+        }
+        sol = sols.next();
+    }
+    //2824 after 1 900 217 564 iterations. very slow!
+    console.log("Number of iterations until max", it)
+    console.log("Part 2 - Max release at t=30", maxRelease)
+
+}
+part2();
+
