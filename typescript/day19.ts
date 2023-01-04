@@ -1,6 +1,6 @@
 import * as fs from 'fs'
 import { Range } from '../lib/Range'
-let input = "input/day19-input.txt"; let y = 2000000;
+let input = "input/day19-input-samp.txt"; let y = 2000000;
 //let input = "input/day15-input-samp.txt" ;let y = 10;
 
 const rawData: string[] = fs.readFileSync(input, 'utf8').split("\n");
@@ -43,9 +43,25 @@ const balanceCheck = (balanceAvailable: number[], ...costs: number[]): boolean =
         (obsidianCost === undefined || balanceAvailable[2] >= obsidianCost);
 };
 
+const maxGeod = (n:number,T:number) => {
+    //the maximum theoretical production of geodes with T minutes left
+    //and n geode producing robots at T 
+    //is calculated with a arithmetic progression
+
+    /**
+     *  min left    =>  T       T-1     T-2     ...     T-i     0 (T==i)
+     *  robots      =>  n       n+1     n+2
+     *  output at i =>  0       n       n+1     ...     n+i-1   n+T-1
+     * 
+     *  total output = n*T + T*(T-1)/2
+     */
+    
+    //
+    return n*T + T*(T-1)>>1;
+}
 
 
-function shouldProduce(blueprint: robot[], robots: number[], robotToProduceIx: number): boolean {
+function shouldProduceBot(blueprint: robot[], robots: number[], robotToProduceIx: number): boolean {
     //find the max consumption for robot
     let maxConsumption = Math.max(...blueprint.map((r) => r.cost[robotToProduceIx]));
 
@@ -57,6 +73,13 @@ function shouldProduce(blueprint: robot[], robots: number[], robotToProduceIx: n
     return true;
 }
 
+/**
+ * Updates state by creating new bots.
+ * @param balanceAvailable 
+ * @param state 
+ * @param blueprint 
+ * @returns 
+ */
 function* factory(balanceAvailable: number[], state: state, blueprint: robot[]) {
     //it can only build one robot at a time!
     //because of that, there shouldn't be more 
@@ -69,8 +92,8 @@ function* factory(balanceAvailable: number[], state: state, blueprint: robot[]) 
         const robot = blueprint[ix];
 
         if (balanceCheck(balanceAvailable, ...robot.cost)
-            && shouldProduce(blueprint, state.robots, ix)) {
-            const newState: state = { balances: state.balances.slice(), robots: state.robots.slice(), last: ix };
+            && shouldProduceBot(blueprint, state.robots, ix)) {
+            const newState: state = { balances: state.balances.slice(), robots: state.robots.slice(), maxGeode: state.maxGeode };
             robot.cost.forEach((cost, cix) => newState.balances[cix] -= cost);
             newState.robots[ix]++;
             yield newState;
@@ -79,7 +102,7 @@ function* factory(balanceAvailable: number[], state: state, blueprint: robot[]) 
     return;
 }
 
-type state = { balances: number[], robots: number[], last: number }
+type state = { balances: number[], robots: number[], maxGeode: number }
 
 function* simulator(blueprint: robot[], t: number, duration: number, state: state) {
     if (t == duration) {
@@ -94,13 +117,14 @@ function* simulator(blueprint: robot[], t: number, duration: number, state: stat
 
     const balancePreCollection = state.balances.slice();
 
+    //each robot produces 
     state.robots.forEach((n, rix) => state.balances[rix] += n);
 
     for (const newState of factory(balancePreCollection, state, blueprint)) {
         yield* simulator(blueprint, t + 1, duration, newState);
     }
 
-    yield* simulator(blueprint, t + 1, duration, { balances: state.balances.slice(), robots: state.robots.slice(), last: 0 });
+    yield* simulator(blueprint, t + 1, duration, { balances: state.balances.slice(), robots: state.robots.slice(), maxGeode: 0 });
     return;
 
     if (debug) {
@@ -138,7 +162,7 @@ blueprints.forEach((blueprint, i) => {
     console.log("Blueprint ", i+1)
 
     allBots[0] = 1; // you start with 1 ore robot
-    let state0: state = { balances: new Array(4).fill(0), robots: allBots, last: 0 }
+    let state0: state = { balances: new Array(4).fill(0), robots: allBots, maxGeode: 0 }
     let sim = simulator(blueprint, 0, 24, state0);
     let sol = sim.next();
     let ceiling = 0;
